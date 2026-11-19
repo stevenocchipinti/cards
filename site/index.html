@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="color-scheme" content="dark light">
+<title>Phone Compass</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --line: #2a2f3a;
+    --text: #e8eaf0;
+    --muted: #8a93a6;
+    --accent: #ff5a4e;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f5f7;
+      --panel: #ffffff;
+      --line: #d9dce3;
+      --text: #14161b;
+      --muted: #5c6475;
+      --accent: #e0362b;
+      --ok: #15803d;
+      --warn: #b45309;
+      --bad: #b91c1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+             max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    -webkit-tap-highlight-color: transparent;
+  }
+  main { max-width: 520px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 1.1rem; margin: 0; font-weight: 600; letter-spacing: .02em; }
+  .sub { color: var(--muted); font-size: .85rem; margin: 2px 0 0; }
+
+  .readout { text-align: center; }
+  .deg { font-size: clamp(3.5rem, 18vw, 5.5rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .card { font-size: 1.4rem; font-weight: 600; color: var(--accent); min-height: 1.4em; }
+  .src { color: var(--muted); font-size: .85rem; min-height: 1.2em; }
+
+  .dial { position: relative; width: min(80vw, 340px); aspect-ratio: 1; margin: 0 auto; }
+  .dial svg { width: 100%; height: 100%; display: block; }
+  #rose { transition: transform .08s linear; transform-origin: 50% 50%; }
+  .lubber { position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-top: 18px solid var(--accent); }
+
+  button {
+    font: inherit; font-weight: 600; color: #fff; background: var(--accent);
+    border: 0; border-radius: 12px; padding: 14px 18px; min-height: 48px; width: 100%;
+    cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; }
+
+  .msg { border-radius: 12px; padding: 12px 14px; font-size: .9rem; border: 1px solid var(--line); background: var(--panel); }
+  .msg.warn { border-color: var(--warn); }
+  .msg.bad { border-color: var(--bad); }
+  .msg:empty { display: none; }
+
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; }
+  summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bottom: 10px; }
+  td { padding: 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); margin-right: 8px; vertical-align: middle; }
+  .dot.on { background: var(--ok); }
+  .dot.active { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .note { color: var(--muted); font-size: .8rem; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Phone Compass</h1>
+    <p class="sub">Shows which way your phone is pointing, using whatever sensors your device exposes.</p>
+  </header>
+
+  <section class="readout" aria-live="polite">
+    <div class="deg" id="deg">--°</div>
+    <div class="card" id="cardinal"></div>
+    <div class="src" id="source">Tap Start to read sensors</div>
+  </section>
+
+  <div class="dial" aria-hidden="true">
+    <div class="lubber"></div>
+    <svg viewBox="-110 -110 220 220">
+      <g id="rose">
+        <circle r="104" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+        <g id="ticks"></g>
+        <g font-size="16" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="var(--text)">
+          <text y="-80" fill="var(--accent)">N</text>
+          <text x="80">E</text>
+          <text y="80">S</text>
+          <text x="-80">W</text>
+        </g>
+        <polygon points="0,-60 8,0 -8,0" fill="var(--accent)"/>
+        <polygon points="0,60 8,0 -8,0" fill="var(--muted)"/>
+        <circle r="5" fill="var(--text)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="msg" id="msg" role="status"></div>
+
+  <button id="start">Start</button>
+  <button id="gps" class="secondary">Also use GPS course (works while walking)</button>
+
+  <details>
+    <summary>Sensor diagnostics</summary>
+    <p class="note">Green = delivering data. Red = the source currently used for the heading. Heading is relative to magnetic north unless the source is GPS.</p>
+    <table id="sources"></table>
+    <table>
+      <tr><td>Orientation α / β / γ</td><td id="euler">–</td></tr>
+      <tr><td>Acceleration incl. gravity (m/s²)</td><td id="accel">–</td></tr>
+      <tr><td>Rotation rate (°/s)</td><td id="gyro">–</td></tr>
+      <tr><td>Magnetometer (µT)</td><td id="mag">–</td></tr>
+      <tr><td>Screen orientation</td><td id="screen">–</td></tr>
+      <tr><td>Compass accuracy</td><td id="acc">–</td></tr>
+      <tr><td>Secure context</td><td id="secure">–</td></tr>
+    </table>
+  </details>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const RAD = Math.PI / 180;
+  const DEG = 180 / Math.PI;
+  const STALE_MS = 1000;
+
+  // Heading sources, ordered from most to least trustworthy.
+  const SOURCES = [
+    { id: "sensor",   label: "AbsoluteOrientationSensor (Generic Sensor API)" },
+    { id: "webkit",   label: "iOS webkitCompassHeading" },
+    { id: "absEvent", label: "deviceorientationabsolute event" },
+    { id: "absFlag",  label: "deviceorientation (absolute: true)" },
+    { id: "gps",      label: "GPS course over ground" },
+    { id: "relative", label: "deviceorientation (relative only – not true north)" },
+  ];
+  const latest = {}; // id -> { heading, t }
+
+  // ---------- build UI bits ----------
+  const ticks = $("ticks");
+  for (let d = 0; d < 360; d += 10) {
+    const long = d % 30 === 0;
+    const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    l.setAttribute("x1", 0); l.setAttribute("x2", 0);
+    l.setAttribute("y1", -104); l.setAttribute("y2", long ? -92 : -97);
+    l.setAttribute("stroke", "var(--muted)");
+    l.setAttribute("stroke-width", long ? 2 : 1);
+    l.setAttribute("transform", `rotate(${d})`);
+    ticks.appendChild(l);
+  }
+  $("sources").innerHTML = SOURCES.map(s =>
+    `<tr><td><span class="dot" id="dot-${s.id}"></span>${s.label}</td><td id="val-${s.id}">–</td></tr>`
+  ).join("");
+  $("secure").textContent = window.isSecureContext ? "yes" : "NO (sensors need HTTPS)";
+
+  const msg = (text, kind = "") => { const m = $("msg"); m.textContent = text; m.className = "msg " + kind; };
+
+  // ---------- maths ----------
+  function screenAngle() {
+    if (screen.orientation && typeof screen.orientation.angle === "number") return screen.orientation.angle;
+    if (typeof window.orientation === "number") return (window.orientation + 360) % 360; // old iOS
+    return 0;
+  }
+
+  // Given the device's x, y, z axes expressed in Earth coordinates (East, North, Up),
+  // return the compass heading the phone is "pointing".
+  // Flat: the top edge of the screen. Upright: the direction the back camera looks.
+  // In between we blend by how far the screen's top edge is raised, so pitching up is
+  // seamless and rolling the phone sideways doesn't skew the heading.
+  function headingFromAxes(X, Y, Z) {
+    const a = screenAngle() * RAD;
+    const up = [0, 1, 2].map(i => Math.cos(a) * Y[i] + Math.sin(a) * X[i]);
+    const w = Math.min(1, Math.max(0, up[2]));
+    const e = (1 - w) * up[0] - w * Z[0];
+    const n = (1 - w) * up[1] - w * Z[1];
+    if (Math.hypot(e, n) < 0.15) return null; // degenerate (screen facing the ground, tilted back)
+    return (Math.atan2(e, n) * DEG + 360) % 360;
+  }
+
+  // W3C DeviceOrientation Euler angles (Z-X'-Y'') -> device axes in Earth frame.
+  function axesFromEuler(alpha, beta, gamma) {
+    const cA = Math.cos(alpha * RAD), sA = Math.sin(alpha * RAD);
+    const cB = Math.cos(beta * RAD),  sB = Math.sin(beta * RAD);
+    const cG = Math.cos(gamma * RAD), sG = Math.sin(gamma * RAD);
+    return [
+      [cA * cG - sA * sB * sG, cG * sA + cA * sB * sG, -cB * sG],
+      [-cB * sA,               cA * cB,                sB],
+      [cG * sA * sB + cA * sG, sA * sG - cA * cG * sB, cB * cG],
+    ];
+  }
+
+  // Quaternion [x, y, z, w] (device -> Earth ENU) -> device axes in Earth frame.
+  function axesFromQuaternion([x, y, z, w]) {
+    return [
+      [1 - 2 * (y * y + z * z), 2 * (x * y + z * w),     2 * (x * z - y * w)],
+      [2 * (x * y - z * w),     1 - 2 * (x * x + z * z), 2 * (y * z + x * w)],
+      [2 * (x * z + y * w),     2 * (y * z - x * w),     1 - 2 * (x * x + y * y)],
+    ];
+  }
+
+  const headingFromEuler = (a, b, g) => headingFromAxes(...axesFromEuler(a, b, g));
+
+  // ---------- source bookkeeping ----------
+  function report(id, heading) {
+    if (heading == null || Number.isNaN(heading)) return;
+    latest[id] = { heading, t: performance.now() };
+    $("val-" + id).textContent = heading.toFixed(1) + "°";
+  }
+
+  function pickActive() {
+    const now = performance.now();
+    for (const s of SOURCES) {
+      const v = latest[s.id];
+      if (v && now - v.t < STALE_MS) return s;
+    }
+    return null;
+  }
+
+  // ---------- render loop with circular smoothing ----------
+  let sx = 0, sy = 0, shown = null, roseAngle = 0, started = false, firstDataAt = 0;
+  const CARD = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+
+  function frame() {
+    const now = performance.now();
+    for (const s of SOURCES) {
+      const v = latest[s.id];
+      const on = v && now - v.t < STALE_MS;
+      $("dot-" + s.id).className = "dot" + (on ? " on" : "");
+    }
+    const active = pickActive();
+    if (active) {
+      if (!firstDataAt) { firstDataAt = now; if ($("msg").classList.contains("warn")) msg(""); }
+      $("dot-" + active.id).className = "dot active";
+      const h = latest[active.id].heading * RAD;
+      const k = 0.2;
+      sx = sx * (1 - k) + Math.sin(h) * k;
+      sy = sy * (1 - k) + Math.cos(h) * k;
+      const hd = (Math.atan2(sx, sy) * DEG + 360) % 360;
+
+      if (shown == null) roseAngle = -hd;
+      else roseAngle -= ((hd - shown + 540) % 360) - 180; // shortest path, no 359->0 spin
+      shown = hd;
+
+      $("rose").style.transform = `rotate(${roseAngle}deg)`;
+      $("deg").textContent = Math.round(hd) % 360 + "°";
+      $("cardinal").textContent = CARD[Math.round(hd / 22.5) % 16];
+      $("source").textContent = active.id === "relative"
+        ? "Relative only – your device isn't reporting true compass data"
+        : (active.id === "gps" ? "Using GPS course (true north)" : "Magnetic heading · " + active.label);
+    }
+    $("screen").textContent = screenAngle() + "°";
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- event handlers ----------
+  function onOrientation(e) {
+    if (e.alpha == null && e.webkitCompassHeading == null) return;
+    $("euler").textContent = [e.alpha, e.beta, e.gamma].map(v => v == null ? "–" : v.toFixed(0)).join(" / ");
+
+    if (typeof e.webkitCompassHeading === "number" && e.webkitCompassHeading >= 0) {
+      // iOS: already tilt-compensated, magnetic north, clockwise.
+      report("webkit", e.webkitCompassHeading);
+      const acc = e.webkitCompassAccuracy;
+      $("acc").textContent = acc == null ? "–" : (acc < 0 ? "uncalibrated" : "±" + acc.toFixed(0) + "°");
+      if (acc != null && (acc < 0 || acc > 30)) msg("Compass accuracy is poor. Wave your phone in a figure-8 to calibrate.", "warn");
+      return;
+    }
+    if (e.alpha == null) return;
+    const h = headingFromEuler(e.alpha, e.beta, e.gamma);
+    if (e.type === "deviceorientationabsolute") report("absEvent", h);
+    else if (e.absolute === true) report("absFlag", h);
+    else report("relative", h);
+  }
+
+  function onMotion(e) {
+    const g = e.accelerationIncludingGravity;
+    if (g && g.x != null) $("accel").textContent = [g.x, g.y, g.z].map(v => v.toFixed(1)).join(" / ");
+    const r = e.rotationRate;
+    if (r && r.alpha != null) $("gyro").textContent = [r.alpha, r.beta, r.gamma].map(v => v.toFixed(0)).join(" / ");
+  }
+
+  function tryGenericSensors() {
+    if ("AbsoluteOrientationSensor" in window) {
+      try {
+        const s = new AbsoluteOrientationSensor({ frequency: 60, referenceFrame: "device" });
+        s.addEventListener("reading", () => report("sensor", headingFromAxes(...axesFromQuaternion(s.quaternion))));
+        s.addEventListener("error", (ev) => { $("val-sensor").textContent = ev.error.name; });
+        s.start();
+      } catch (err) { $("val-sensor").textContent = err.name; }
+    } else {
+      $("val-sensor").textContent = "not supported";
+    }
+    if ("Magnetometer" in window) {
+      try {
+        const m = new Magnetometer({ frequency: 10 });
+        m.addEventListener("reading", () => { $("mag").textContent = [m.x, m.y, m.z].map(v => v.toFixed(0)).join(" / "); });
+        m.addEventListener("error", (ev) => { $("mag").textContent = ev.error.name; });
+        m.start();
+      } catch (err) { $("mag").textContent = err.name; }
+    } else {
+      $("mag").textContent = "not exposed by browser";
+    }
+  }
+
+  async function requestIOSPermission(Ctor) {
+    if (Ctor && typeof Ctor.requestPermission === "function") {
+      try { return (await Ctor.requestPermission()) === "granted"; }
+      catch { return false; }
+    }
+    return true; // no permission gate on this browser
+  }
+
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch {}
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (started && document.visibilityState === "visible" && (!wakeLock || wakeLock.released)) keepAwake();
+  });
+
+  async function start() {
+    const btn = $("start");
+    btn.disabled = true;
+
+    if (!window.isSecureContext) {
+      msg("This page must be served over HTTPS for sensor access (GitHub Pages does this for you).", "bad");
+    }
+
+    // iOS 13+ requires these to be called directly from the tap handler.
+    const [orientOK, motionOK] = await Promise.all([
+      requestIOSPermission(window.DeviceOrientationEvent),
+      requestIOSPermission(window.DeviceMotionEvent),
+    ]);
+    if (!orientOK) {
+      msg("Motion & orientation access was denied. On iPhone: close Safari's tab, reopen the page and tap Allow (or check Settings › Safari › Motion & Orientation Access).", "bad");
+      btn.disabled = false;
+      return;
+    }
+
+    tryGenericSensors();
+    window.addEventListener("deviceorientationabsolute", onOrientation);
+    window.addEventListener("deviceorientation", onOrientation);
+    if (motionOK) window.addEventListener("devicemotion", onMotion);
+    keepAwake();
+
+    started = true;
+    btn.textContent = "Running";
+    $("source").textContent = "Waiting for sensor data…";
+
+    setTimeout(() => {
+      if (!firstDataAt) {
+        msg("No orientation data received. This device or browser may not have a compass/gyroscope (most laptops don't). Try on a phone, or use the GPS option while walking.", "warn");
+      } else if (pickActive()?.id === "relative") {
+        msg("Your browser only provides relative orientation, so the heading is not tied to north. Try Chrome or Safari, or use the GPS option while walking.", "warn");
+      }
+    }, 3000);
+  }
+
+  function startGPS() {
+    const btn = $("gps");
+    if (!("geolocation" in navigator)) { $("val-gps").textContent = "not supported"; return; }
+    btn.disabled = true;
+    btn.textContent = "GPS course active (start walking)";
+    navigator.geolocation.watchPosition(
+      (p) => {
+        const { heading, speed } = p.coords;
+        if (heading != null && !Number.isNaN(heading) && (speed == null || speed > 0.7)) report("gps", heading);
+        else $("val-gps").textContent = "need movement";
+      },
+      (err) => { $("val-gps").textContent = err.message || "denied"; btn.disabled = false; btn.textContent = "Retry GPS course"; },
+      { enableHighAccuracy: true, maximumAge: 0 }
+    );
+  }
+
+  $("start").addEventListener("click", start);
+  $("gps").addEventListener("click", startGPS);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
