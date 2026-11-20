@@ -1,0 +1,48 @@
+/* Video-game poker table look. See docs/PRD.md › Play screen. */
+:root {
+  --felt: #1f5e3a;
+  --felt-light: #2f7a4c;
+  --felt-dark: #164a2d;
+  --rail: #6b4226;
+  --rail-dark: #3a2416;
+  --panel: #123a24;
+  --gold: #ffd75e;
+  --ink: #f3efe2;
+  --ink-muted: #cfe3d3;
+  --ink-dark: #1b1b1b;
+  --font-display: "Lilita One", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: radial-gradient(ellipse at 50% 38%, var(--felt-light) 0%, var(--felt) 55%, var(--felt-dark) 100%) fixed;
+  background-color: var(--felt-dark);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button, input { font: inherit; }
+
+.screen {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin: 0;
+}

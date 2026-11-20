@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: Test and deploy
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,22 +12,53 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # With a production deploy key, push the Convex backend and build against it.
+      # Without one, build the site against the dev deployment in vars.VITE_CONVEX_URL.
+      - name: Deploy Convex and build
+        if: env.CONVEX_DEPLOY_KEY != ''
+        run: npx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'npm run build'
+      - name: Build against dev deployment
+        if: env.CONVEX_DEPLOY_KEY == ''
+        env:
+          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+        run: npm run build
       - uses: actions/configure-pages@v5
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: site
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
