@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AIM_DEG,
   CENTER_SCALE,
+  PINNED_MAX_DEPTH_PX,
   PINNED_SCALE,
   PINNED_STEP_PX,
   TAP_MIN_SCALE,
@@ -144,6 +145,22 @@ describe("compassLayout", () => {
     expect(s.r2!.y - s.r1!.y).toBeCloseTo(PINNED_STEP_PX);
     expect(s.l2!.y - s.l1!.y).toBeCloseTo(PINNED_STEP_PX);
     expect(r.aimed).toBeNull();
+  });
+
+  it("squeezes a deep pinned stack so it never reaches past PINNED_MAX_DEPTH_PX", () => {
+    const three = byId(compassLayout([p("a", 40), p("b", 60), p("c", 80)], 0, 390));
+    expect(three.b!.y - three.a!.y).toBeCloseTo(PINNED_STEP_PX); // three fit unsqueezed
+
+    const r = compassLayout(
+      Array.from({ length: 7 }, (_, i) => p(`r${i}`, 40 + i * 10)),
+      0,
+      390,
+    );
+    const s = byId(r);
+    const top = s.r0!.y;
+    expect(top).toBeCloseTo(arcTop(s.r0!.x, 390));
+    expect(s.r6!.y - top).toBeCloseTo(PINNED_MAX_DEPTH_PX);
+    expect(s.r1!.y - top).toBeCloseTo(PINNED_MAX_DEPTH_PX / 6); // evenly squeezed, closest first
   });
 
   it("sends a Target exactly behind to the right edge", () => {
