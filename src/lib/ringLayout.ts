@@ -53,17 +53,31 @@ export function rotateSeating<T>(seatingOrder: readonly T[], meId: T): T[] {
 
 export type RingSlot<T> = { target: T; x: number; y: number; scale: number };
 
+/** Tap mode: neighbours closer than this (px) would overlap, so the ring gets crowded. */
+export const TAP_MIN_SPACING_PX = 76;
+/** Crowded avatars shrink to no less than this... */
+export const TAP_MIN_SCALE = 0.6;
+/** ...and every second one drops this far (px at scale 1) below the arc, so they interleave. */
+export const TAP_STAGGER_PX = 64;
+
 /**
  * Tap mode: `others` (already in ring order, see rotateSeating) evenly spaced along the
  * arc from the left edge to the right edge. A single other Player sits dead centre.
+ *
+ * A crowded table (neighbours under TAP_MIN_SPACING_PX apart) staggers every second avatar
+ * below the arc, which doubles the room each has, and shrinks them if that's still too tight.
  */
 export function tapLayout<T>(others: readonly T[], width: number = DESIGN_WIDTH): RingSlot<T>[] {
   const n = others.length;
   const left = width * TAP_EDGE_FRACTION;
   const span = width - 2 * left;
+  const spacing = n > 1 ? span / (n - 1) : Infinity;
+  const crowded = spacing < TAP_MIN_SPACING_PX;
+  const scale = crowded ? Math.max(TAP_MIN_SCALE, Math.min(1, (2 * spacing) / TAP_MIN_SPACING_PX)) : 1;
   return others.map((target, i) => {
     const x = n === 1 ? width / 2 : left + (span * i) / (n - 1);
-    return { target, x, y: arcTop(x, width), scale: 1 };
+    const drop = crowded && i % 2 === 1 ? TAP_STAGGER_PX * scale : 0;
+    return { target, x, y: arcTop(x, width) + drop, scale };
   });
 }
 

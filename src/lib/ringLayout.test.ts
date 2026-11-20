@@ -4,6 +4,8 @@ import {
   CENTER_SCALE,
   PINNED_SCALE,
   PINNED_STEP_PX,
+  TAP_MIN_SCALE,
+  TAP_STAGGER_PX,
   arcTop,
   compassLayout,
   rotateSeating,
@@ -62,6 +64,19 @@ describe("tapLayout", () => {
     const a = tapLayout(["x", "y"], 390);
     const b = tapLayout(["x", "y"], 780);
     expect(b[0]!.x).toBeCloseTo(a[0]!.x * 2);
+  });
+  it("staggers a crowded ring, then shrinks it", () => {
+    const four = tapLayout(["a", "b", "c", "d"], 390); // 100px apart: room to spare
+    expect(four.every((s) => s.scale === 1 && s.y === arcTop(s.x, 390))).toBe(true);
+
+    const six = tapLayout(["a", "b", "c", "d", "e", "f"], 390); // 60px apart
+    expect(six.map((s) => s.scale)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(six[0]!.y).toBeCloseTo(arcTop(six[0]!.x, 390));
+    expect(six[1]!.y).toBeCloseTo(arcTop(six[1]!.x, 390) + TAP_STAGGER_PX);
+
+    const many = tapLayout(Array.from({ length: 23 }, (_, i) => i), 390);
+    expect(many[0]!.scale).toBe(TAP_MIN_SCALE);
+    expect(many[1]!.y).toBeCloseTo(arcTop(many[1]!.x, 390) + TAP_STAGGER_PX * TAP_MIN_SCALE);
   });
   it("handles nobody", () => {
     expect(tapLayout([], 390)).toEqual([]);
