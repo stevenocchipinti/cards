@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as bearings from "../bearings.js";
 import type * as chips from "../chips.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as presence from "../presence.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  bearings: typeof bearings;
   chips: typeof chips;
   "lib/auth": typeof lib_auth;
   presence: typeof presence;
