@@ -155,6 +155,11 @@ describe("joinRoom", () => {
 });
 
 describe("getRoom and myRooms", () => {
+  test("a malformed roomId (from a mangled URL) is null, not an error", async () => {
+    const s = await setup();
+    expect(await s.t.query(api.rooms.getRoom, { deviceId: HOST, roomId: "not-an-id" })).toBeNull();
+  });
+
   test("getRoom is null for anyone without an active Player in the Room", async () => {
     const s = await setup();
     expect(await s.view("device-stranger")).toBeNull();

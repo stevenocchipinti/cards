@@ -10,6 +10,7 @@
 
 import type * as chips from "../chips.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as presence from "../presence.js";
 import type * as rooms from "../rooms.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   chips: typeof chips;
   "lib/auth": typeof lib_auth;
+  presence: typeof presence;
   rooms: typeof rooms;
 }>;
 

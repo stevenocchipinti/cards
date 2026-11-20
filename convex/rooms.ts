@@ -208,9 +208,12 @@ export const joinRoom = mutation({
   },
 });
 
-/** Everything the Room screens need. Null when the caller has no active Player in the Room. */
+/**
+ * Everything the Room screens need. Null when the caller has no active Player in the Room.
+ * roomId is a plain string because it comes straight from the URL: a malformed one is null too.
+ */
 export const getRoom = query({
-  args: { deviceId: v.string(), roomId: v.id("rooms") },
+  args: { deviceId: v.string(), roomId: v.string() },
   returns: v.union(
     v.null(),
     v.object({
@@ -240,7 +243,9 @@ export const getRoom = query({
     }),
   ),
   handler: async (ctx, args) => {
-    const found = await findPlayer(ctx, args.roomId, args.deviceId);
+    const roomId = ctx.db.normalizeId("rooms", args.roomId);
+    if (!roomId) return null;
+    const found = await findPlayer(ctx, roomId, args.deviceId);
     if (!found) return null;
     const { room, player } = found;
     const isHost = room.hostPlayerId === player._id;
