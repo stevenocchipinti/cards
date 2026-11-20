@@ -46,8 +46,7 @@ export function reverseCheck(entry: ReversibleEntry, table: Table): ReverseCheck
   if (entry.reversedById !== null) return { canReverse: false, reason: "Already reversed" };
   for (const h of [entry.from, entry.to]) {
     if (holderChips(h, table) === null) {
-      const left = h.kind === "player";
-      return { canReverse: false, reason: `${nameOf(h, table)} ${left ? "has left the Room" : "is gone"}` };
+      return { canReverse: false, reason: `${nameOf(h, table)} is no longer in the Room` };
     }
   }
   const held = holderChips(entry.to, table)!;

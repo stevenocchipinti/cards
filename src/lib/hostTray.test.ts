@@ -67,9 +67,9 @@ describe("reverseCheck", () => {
   it("refuses a Transfer that's already reversed", () => {
     expect(reverseCheck(entry(ann, pot, 1, "t9"), table)).toEqual({ canReverse: false, reason: "Already reversed" });
   });
-  it("refuses when either Player has Left", () => {
-    expect(reverseCheck(entry(bob, ann, 5), table)).toEqual({ canReverse: false, reason: "Bob has left the Room" });
-    expect(reverseCheck(entry(bank, bob, 5), table).reason).toBe("Bob has left the Room");
+  it("refuses when either Player has Left or was Removed", () => {
+    expect(reverseCheck(entry(bob, ann, 5), table)).toEqual({ canReverse: false, reason: "Bob is no longer in the Room" });
+    expect(reverseCheck(entry(bank, bob, 5), table).reason).toBe("Bob is no longer in the Room");
   });
 });
 
