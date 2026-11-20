@@ -55,8 +55,8 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("left"), v.literal("removed")),
   })
     .index("by_roomId_and_status", ["roomId", "status"])
-    .index("by_roomId_and_deviceId", ["roomId", "deviceId"])
-    .index("by_deviceId", ["deviceId"]),
+    .index("by_roomId_and_deviceId_and_status", ["roomId", "deviceId", "status"])
+    .index("by_deviceId_and_status", ["deviceId", "status"]),
 
   pots: defineTable({
     roomId: v.id("rooms"),
@@ -78,7 +78,16 @@ export default defineSchema({
     reversesId: v.optional(v.id("transfers")),
     /** When this Transfer emptied a Pot, its Contributions beforehand, so a Reversal can restore them. */
     potContributionsBefore: v.optional(v.record(v.string(), v.number())),
-  }).index("by_roomId", ["roomId"]),
+    /**
+     * The exact changes this Transfer made to Pot Contributions (including a reset when it
+     * emptied a Pot), so a Reversal can apply the opposite, and a Reversal of a Reversal too.
+     */
+    contributionChanges: v.optional(
+      v.array(v.object({ potId: v.id("pots"), playerId: v.id("players"), delta: v.number() })),
+    ),
+  })
+    .index("by_roomId", ["roomId"])
+    .index("by_reversesId", ["reversesId"]),
 
   /** The heading a Player's phone pointed along to face a Target, locked by that Player. */
   bearings: defineTable({
