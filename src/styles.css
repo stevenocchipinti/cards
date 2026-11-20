@@ -538,9 +538,18 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.6); overflow: hidden; overscr
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  touch-action: manipulation;
+  /* Holding a chip then dragging changes the amount, so the page mustn't scroll or show a callout. */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
   transition: transform 60ms ease, box-shadow 60ms ease;
 }
+.chip-btn--dragging,
+.chip-btn--dragging:active:not(:disabled) {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px var(--gold), 0 0 18px 4px rgb(255 215 94 / 0.6);
+}
+.rail__amount-adjust { color: var(--gold); }
 .chip-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgb(0 0 0 / 0.45); }
 .chip-btn:disabled { cursor: default; filter: saturate(0.4) brightness(0.7); }
 .chip-btn__face {

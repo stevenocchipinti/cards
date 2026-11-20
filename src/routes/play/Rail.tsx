@@ -1,4 +1,5 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { dragAmount, dragSteps, HOLD_MS, HOLD_SLOP_PX } from "../../lib/chipDrag.ts";
 import { addToAmount, cappedAmount, isSwipeUp, SWIPE_UP_PX, type SendBarState } from "../../lib/sendBar.ts";
 
 /** The chip buttons, coloured like real chips. */
@@ -23,6 +24,7 @@ type Props = {
 /** My rail along the bottom: my Chips, the amount, the chip buttons and the send bar. */
 export function Rail({ myChips, amount, onAmount, targetName, bar, onSend, error }: Props) {
   const shown = cappedAmount(amount, myChips);
+  const [adjusting, setAdjusting] = useState<number | null>(null);
   return (
     <section className="rail" aria-label="Your Chips">
       <div className="rail__mine">
@@ -33,20 +35,23 @@ export function Rail({ myChips, amount, onAmount, targetName, bar, onSend, error
         <span className="rail__amount-value" aria-label={`Amount: ${shown}`}>
           {shown.toLocaleString("en")}
         </span>
-        {targetName && <span className="rail__amount-to">→ {targetName}</span>}
+        {adjusting !== null ? (
+          <span className="rail__amount-to rail__amount-adjust">↑ +{adjusting} · ↓ −{adjusting}</span>
+        ) : (
+          targetName && <span className="rail__amount-to">→ {targetName}</span>
+        )}
       </div>
       <div className="rail__chips">
         {CHIP_BUTTONS.map((c) => (
-          <button
+          <ChipButton
             key={c.value}
-            type="button"
-            className={`chip-btn ${c.className}`}
-            aria-label={`Add ${c.value}`}
-            disabled={myChips <= 0}
-            onClick={() => onAmount(addToAmount(shown, c.value, myChips))}
-          >
-            <span className="chip-btn__face">+{c.value}</span>
-          </button>
+            value={c.value}
+            className={c.className}
+            shown={shown}
+            myChips={myChips}
+            onAmount={onAmount}
+            onAdjusting={(on) => setAdjusting(on ? c.value : null)}
+          />
         ))}
       </div>
       <div className="rail__row">
@@ -64,6 +69,102 @@ export function Rail({ myChips, amount, onAmount, targetName, bar, onSend, error
         </p>
       )}
     </section>
+  );
+}
+
+function buzz(ms: number) {
+  navigator.vibrate?.(ms);
+}
+
+/**
+ * A chip button. A quick tap adds its value once. Holding it for HOLD_MS starts a drag:
+ * each STEP_PX up adds the value and each step down takes it away, with a small vibration
+ * per step and a longer one at 0 or at my Chips. Keyboard activation adds once.
+ */
+function ChipButton(props: {
+  value: number;
+  className: string;
+  shown: number;
+  myChips: number;
+  onAmount: (amount: number) => void;
+  onAdjusting: (on: boolean) => void;
+}) {
+  const { value, className, shown, myChips, onAmount, onAdjusting } = props;
+  const press = useRef<{ startY: number; base: number; steps: number; timer: number | null; dragging: boolean; limitBuzzed: boolean } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => () => {
+    if (press.current?.timer) window.clearTimeout(press.current.timer);
+  }, []);
+
+  function end() {
+    if (press.current?.timer) window.clearTimeout(press.current.timer);
+    press.current = null;
+    setDragging(false);
+    onAdjusting(false);
+  }
+
+  function down(e: PointerEvent<HTMLButtonElement>) {
+    if (myChips <= 0 || !e.isPrimary) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const p = { startY: e.clientY, base: shown, steps: 0, timer: null as number | null, dragging: false, limitBuzzed: false };
+    p.timer = window.setTimeout(() => {
+      p.timer = null;
+      p.dragging = true;
+      setDragging(true);
+      onAdjusting(true);
+      buzz(15);
+    }, HOLD_MS);
+    press.current = p;
+  }
+
+  function move(e: PointerEvent<HTMLButtonElement>) {
+    const p = press.current;
+    if (!p) return;
+    if (!p.dragging) {
+      if (Math.abs(e.clientY - p.startY) > HOLD_SLOP_PX) end();
+      return;
+    }
+    const steps = dragSteps(p.startY, e.clientY);
+    if (steps === p.steps) return;
+    const { amount, atLimit } = dragAmount(p.base, steps, value, myChips);
+    const prev = dragAmount(p.base, p.steps, value, myChips).amount;
+    p.steps = steps;
+    if (amount !== prev) {
+      onAmount(amount);
+      p.limitBuzzed = false;
+      buzz(atLimit ? 40 : 8);
+    } else if (atLimit && !p.limitBuzzed) {
+      p.limitBuzzed = true;
+      buzz(40);
+    }
+  }
+
+  function up() {
+    const p = press.current;
+    // Released before the hold started: a plain tap.
+    if (p && !p.dragging) onAmount(addToAmount(shown, value, myChips));
+    end();
+  }
+
+  return (
+    <button
+      type="button"
+      className={`chip-btn ${className}${dragging ? " chip-btn--dragging" : ""}`}
+      aria-label={`Add ${value}. Hold and drag up or down to change by ${value}`}
+      disabled={myChips <= 0}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={end}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={(e) => {
+        // Pointer presses are handled above; this is keyboard activation.
+        if (e.detail === 0) onAmount(addToAmount(shown, value, myChips));
+      }}
+    >
+      <span className="chip-btn__face">+{value}</span>
+    </button>
   );
 }
 
