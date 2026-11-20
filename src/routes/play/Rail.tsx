@@ -72,6 +72,13 @@ export function Rail({ myChips, amount, onAmount, targetName, bar, onSend, error
   );
 }
 
+/**
+ * A haptic tick. Browsers only allow vibration after the page has had a "user activation",
+ * which on touch screens happens when a finger lifts (pointerup/touchend), not when it lands.
+ * So during the very first drag after a page load there's no vibration until the finger
+ * lifts; from then on it works. That's a browser rule, not something we can get around.
+ * (iOS Safari doesn't support vibration at all.)
+ */
 function buzz(ms: number) {
   navigator.vibrate?.(ms);
 }
