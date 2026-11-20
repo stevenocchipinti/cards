@@ -1,0 +1,25 @@
+{
+  "name": "cards",
+  "version": "1.0.0",
+  "description": "A single static page (`site/index.html`, no build step and no dependencies) that reads your phone's orientation sensors and shows which direction it's pointing.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "convex dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevenocchipinti/cards.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/stevenocchipinti/cards/issues"
+  },
+  "homepage": "https://github.com/stevenocchipinti/cards#readme",
+  "dependencies": {
+    "convex": "^1.51.0"
+  }
+}
