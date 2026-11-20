@@ -1,6 +1,5 @@
 /* Compass mode (#9). Imported by CompassPlayScreen; tokens come from src/styles.css. */
 
-/* The top bar's compass toggle. */
 /* Compass toggle: lit gold when on, dim with a slash when off. */
 .mode-toggle {
   width: 44px;

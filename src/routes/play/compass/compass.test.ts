@@ -72,7 +72,7 @@ describe("compassRingLayout", () => {
 describe("resolveMode", () => {
   it("defaults to compass when the device seems to have one, else tap", () => {
     expect(resolveMode(null, "starting")).toEqual({ chosen: "compass", live: true, note: null });
-    expect(resolveMode(null, "needs-permission")).toMatchObject({ chosen: "compass", live: false, note: expect.stringMatching(/Tap Compass/) });
+    expect(resolveMode(null, "needs-permission")).toMatchObject({ chosen: "compass", live: false, note: expect.stringMatching(/compass button/) });
     expect(resolveMode(null, "unsupported")).toEqual({ chosen: "tap", live: false, note: null });
   });
 
