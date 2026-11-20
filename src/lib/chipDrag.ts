@@ -1,10 +1,8 @@
-// Hold a chip button, then drag up or down to step the amount by that chip's value.
-// A quick tap still adds the chip once. Pure, so it's tested.
+// Swipe up or down on a chip button to step the amount by that chip's value.
+// A tap still adds the chip once. Pure, so it's tested.
 
-/** How long a press must last before it becomes a drag. */
-export const HOLD_MS = 300;
-/** Movement before HOLD_MS that cancels the hold (the finger was scrolling or slipping). */
-export const HOLD_SLOP_PX = 10;
+/** Movement under this still counts as a tap. */
+export const TAP_SLOP_PX = 10;
 /** Vertical distance per step while dragging. */
 export const STEP_PX = 24;
 

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { dragAmount, dragSteps, HOLD_MS, HOLD_SLOP_PX } from "../../lib/chipDrag.ts";
+import { useRef, useState, type PointerEvent } from "react";
+import { dragAmount, dragSteps, TAP_SLOP_PX } from "../../lib/chipDrag.ts";
 import { addToAmount, cappedAmount, isSwipeUp, SWIPE_UP_PX, type SendBarState } from "../../lib/sendBar.ts";
 
 /** The chip buttons, coloured like real chips. */
@@ -77,7 +77,7 @@ function buzz(ms: number) {
 }
 
 /**
- * A chip button. A quick tap adds its value once. Holding it for HOLD_MS starts a drag:
+ * A chip button. A tap adds its value once. Swiping on it changes the amount directly:
  * each STEP_PX up adds the value and each step down takes it away, with a small vibration
  * per step and a longer one at 0 or at my Chips. Keyboard activation adds once.
  */
@@ -90,15 +90,10 @@ function ChipButton(props: {
   onAdjusting: (on: boolean) => void;
 }) {
   const { value, className, shown, myChips, onAmount, onAdjusting } = props;
-  const press = useRef<{ startY: number; base: number; steps: number; timer: number | null; dragging: boolean; limitBuzzed: boolean } | null>(null);
+  const press = useRef<{ startY: number; base: number; steps: number; dragging: boolean; limitBuzzed: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => () => {
-    if (press.current?.timer) window.clearTimeout(press.current.timer);
-  }, []);
-
   function end() {
-    if (press.current?.timer) window.clearTimeout(press.current.timer);
     press.current = null;
     setDragging(false);
     onAdjusting(false);
@@ -107,23 +102,17 @@ function ChipButton(props: {
   function down(e: PointerEvent<HTMLButtonElement>) {
     if (myChips <= 0 || !e.isPrimary) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const p = { startY: e.clientY, base: shown, steps: 0, timer: null as number | null, dragging: false, limitBuzzed: false };
-    p.timer = window.setTimeout(() => {
-      p.timer = null;
-      p.dragging = true;
-      setDragging(true);
-      onAdjusting(true);
-      buzz(15);
-    }, HOLD_MS);
-    press.current = p;
+    press.current = { startY: e.clientY, base: shown, steps: 0, dragging: false, limitBuzzed: false };
   }
 
   function move(e: PointerEvent<HTMLButtonElement>) {
     const p = press.current;
     if (!p) return;
     if (!p.dragging) {
-      if (Math.abs(e.clientY - p.startY) > HOLD_SLOP_PX) end();
-      return;
+      if (Math.abs(e.clientY - p.startY) <= TAP_SLOP_PX) return;
+      p.dragging = true;
+      setDragging(true);
+      onAdjusting(true);
     }
     const steps = dragSteps(p.startY, e.clientY);
     if (steps === p.steps) return;
@@ -142,7 +131,7 @@ function ChipButton(props: {
 
   function up() {
     const p = press.current;
-    // Released before the hold started: a plain tap.
+    // Barely moved: a plain tap.
     if (p && !p.dragging) onAmount(addToAmount(shown, value, myChips));
     end();
   }
@@ -151,7 +140,7 @@ function ChipButton(props: {
     <button
       type="button"
       className={`chip-btn ${className}${dragging ? " chip-btn--dragging" : ""}`}
-      aria-label={`Add ${value}. Hold and drag up or down to change by ${value}`}
+      aria-label={`Add ${value}. Swipe up or down on it to change by ${value}`}
       disabled={myChips <= 0}
       onPointerDown={down}
       onPointerMove={move}
