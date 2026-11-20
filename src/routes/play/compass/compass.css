@@ -1,27 +1,28 @@
 /* Compass mode (#9). Imported by CompassPlayScreen; tokens come from src/styles.css. */
 
-/* The top bar's Compass/Tap switch. */
-.mode-switch {
-  display: flex;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
-  background: rgb(0 0 0 / 0.25);
-}
-.mode-switch__btn {
-  min-height: 44px;
-  padding: 0 10px;
+/* The top bar's compass toggle. */
+/* Compass toggle: lit gold when on, dim with a slash when off. */
+.mode-toggle {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
   border: 0;
-  background: transparent;
-  color: var(--ink-muted);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.25);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.25);
+  color: rgb(207 227 211 / 0.6);
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
-.mode-switch__btn[aria-pressed="true"] { background: var(--gold); color: var(--ink-dark); }
-.mode-switch__btn:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
-.mode-switch__btn[aria-pressed="true"]:focus-visible { outline-color: var(--ink); }
+.mode-toggle[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--ink-dark);
+  box-shadow: 0 0 0 2px rgb(255 215 94 / 0.4), 0 0 14px 2px rgb(255 215 94 / 0.45);
+}
+.mode-toggle:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
 /* Holding an avatar or a Pot locks a Bearing, so no callout or magnifier on the press. */
 .play .ring-seat,

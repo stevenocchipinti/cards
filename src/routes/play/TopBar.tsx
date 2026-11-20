@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type Props = {
   code: string;
-  /** #9's Compass/Tap switch goes here. */
+  /** #9's compass toggle goes here. */
   modeSwitch?: ReactNode;
   /** Shown only to the Host: opens the dealer tray (#7). */
   onHost?: () => void;

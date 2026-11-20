@@ -32,7 +32,7 @@ export function resolveMode(stored: Mode | null, status: HeadingStatus): Resolve
     case "starting":
       return { chosen, live: true, note: null };
     case "needs-permission":
-      return { chosen, live: false, note: "Tap Compass to allow motion access" };
+      return { chosen, live: false, note: "Tap the compass button to allow motion access" };
     case "unsupported":
       return { chosen, live: false, note: "No compass on this device, so tap a Target instead" };
     case "denied":

@@ -19,7 +19,7 @@ const TOAST_MS = 1600;
 
 /**
  * The Play screen with compass mode (docs/PRD.md › Play screen › Compass mode) wired in:
- * the Compass/Tap switch, avatars placed by my Bearings and the heading, aiming to pick a
+ * the compass toggle, avatars placed by my Bearings and the heading, aiming to pick a
  * Target, and a long-press to lock a Bearing. In tap mode it's the plain Play screen.
  */
 export function CompassPlayScreen(props: Props) {

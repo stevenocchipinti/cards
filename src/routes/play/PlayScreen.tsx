@@ -29,7 +29,7 @@ type Props = {
   online: Set<string> | undefined;
   /** Where the ring's avatars go. Defaults to tap mode; compass mode (#9) passes its own. */
   layout?: RingLayout;
-  /** The Compass/Tap switch (#9), shown in the top bar. */
+  /** The compass toggle (#9), shown in the top bar. */
   modeSwitch?: ReactNode;
   /** The send bar's hint with no Target; compass mode can say "Aim or tap a Target". */
   noTargetHint?: string;

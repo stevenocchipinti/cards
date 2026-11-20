@@ -12,7 +12,7 @@ function readStored(): Mode | null {
 
 /**
  * The Play screen's mode: the Player's stored choice (localStorage `cards.mode`), the live
- * heading, and `choose`, which the Compass/Tap toggle calls from its click handler. That
+ * heading, and `choose`, which the compass toggle calls from its click handler. That
  * click is the user gesture iOS needs before it will hand over motion data.
  */
 export function useCompassMode() {
