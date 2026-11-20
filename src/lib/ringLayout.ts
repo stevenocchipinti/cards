@@ -26,8 +26,14 @@ export const CENTER_SCALE = 1.35;
 export const PINNED_SCALE = 0.72;
 /** ...this fraction of the width in from the side... */
 const PINNED_EDGE_FRACTION = 0.07;
-/** ...stacked this many px apart, closest to the view first. */
+/** ...stacked this many px apart, closest to the view first... */
 export const PINNED_STEP_PX = 50;
+/**
+ * ...but a stack never reaches more than this far below its first avatar: a deeper one
+ * squeezes its step instead, so a crowd off to one side can't push the felt (and the Pots
+ * under the ring) down the screen. Two full steps fit, so up to three avatars aren't squeezed.
+ */
+export const PINNED_MAX_DEPTH_PX = 2 * PINNED_STEP_PX;
 
 /** y of the visible arc at x, for a screen `width` wide. Clamped to the circle's extent. */
 export function arcTop(x: number, width: number = DESIGN_WIDTH): number {
@@ -130,12 +136,11 @@ export function compassLayout<T extends CompassTarget>(
   });
 
   for (const edge of ["left", "right"] as const) {
-    slots
-      .filter((s) => s.edge === edge)
-      .sort((a, b) => Math.abs(a.relative!) - Math.abs(b.relative!))
-      .forEach((s, k) => {
-        s.y = arcTop(s.x, width) + k * PINNED_STEP_PX;
-      });
+    const stack = slots.filter((s) => s.edge === edge).sort((a, b) => Math.abs(a.relative!) - Math.abs(b.relative!));
+    const step = stack.length > 1 ? Math.min(PINNED_STEP_PX, PINNED_MAX_DEPTH_PX / (stack.length - 1)) : 0;
+    stack.forEach((s, k) => {
+      s.y = arcTop(s.x, width) + k * step;
+    });
   }
 
   let aimedSlot: CompassSlot<T> | null = null;

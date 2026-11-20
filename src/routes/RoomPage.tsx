@@ -6,8 +6,8 @@ import { getDeviceId } from "../lib/device.ts";
 import { usePresence } from "../lib/usePresence.ts";
 import { roomRoute } from "../router.tsx";
 import { LobbyScreen } from "./lobby/LobbyScreen.tsx";
+import { CompassPlayScreen } from "./play/compass/CompassPlayScreen.tsx";
 import { HostTray } from "./play/host/HostTray.tsx";
-import { PlayScreen } from "./play/PlayScreen.tsx";
 import type { RoomView } from "./room/types.ts";
 
 export function RoomPage() {
@@ -30,7 +30,9 @@ export function RoomPage() {
 function LiveRoom({ view }: { view: RoomView }) {
   const online = usePresence(view.room._id as Id<"rooms">);
   if (view.room.stage === "lobby") return <LobbyScreen view={view} online={online} />;
-  return <PlayScreen view={view} online={online} renderHostTray={(ctx) => <HostTray {...ctx} />} />;
+  return (
+    <CompassPlayScreen view={view} online={online} renderHostTray={(ctx) => <HostTray {...ctx} />} />
+  );
 }
 
 function NotInRoom() {

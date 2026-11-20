@@ -1,0 +1,78 @@
+/* Compass mode (#9). Imported by CompassPlayScreen; tokens come from src/styles.css. */
+
+/* The top bar's Compass/Tap switch. */
+.mode-switch {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
+  background: rgb(0 0 0 / 0.25);
+}
+.mode-switch__btn {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mode-switch__btn[aria-pressed="true"] { background: var(--gold); color: var(--ink-dark); }
+.mode-switch__btn:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+.mode-switch__btn[aria-pressed="true"]:focus-visible { outline-color: var(--ink); }
+
+/* Holding an avatar or a Pot locks a Bearing, so no callout or magnifier on the press. */
+.play .ring-seat,
+.play .pot__chip { -webkit-touch-callout: none; touch-action: manipulation; }
+
+/* No Bearing yet: the avatar sits in its tap slot with a faint dashed ring around it. */
+.play .ring-seat--unplaced:not(:focus-visible) .avatar { outline: 2px dashed rgb(255 255 255 / 0.5); outline-offset: 3px; }
+
+/* The aim marker: a faint gold tick on the crest of the ring, behind the avatars. */
+.aim-tick {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-top) + 52px);
+  width: 3px;
+  height: 18px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--gold);
+  opacity: 0.55;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* "Locked Ann", just under the ring. */
+.compass-toast-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--safe-top) + var(--ring-bottom, 170px) - 8px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 6;
+}
+.compass-toast {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.7);
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  animation: compass-toast-in 0.15s ease-out;
+}
+@keyframes compass-toast-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* The hint, or why compass mode fell back to tap. */
+.compass-note { margin: 0; max-width: 300px; font-size: 12px; font-weight: 700; color: var(--ink-muted); text-align: center; opacity: 0.85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .compass-toast { animation: none; }
+}

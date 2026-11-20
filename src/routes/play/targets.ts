@@ -28,8 +28,11 @@ export function ringPlayers(view: RoomView): PublicPlayer[] {
   ).flatMap((id) => (id === view.me._id ? [] : [byId.get(id)!]));
 }
 
-/** One avatar's place on the ring. Compass layouts can also pin it to an edge with ‹ or ›. */
-export type PlaySlot = RingSlot<PublicPlayer> & { edge?: "left" | "right" | null };
+/**
+ * One avatar's place on the ring. Compass layouts can also pin it to an edge with ‹ or ›,
+ * or flag it `unplaced` (no Bearing yet, so it sits in its tap-mode slot, outlined dashed).
+ */
+export type PlaySlot = RingSlot<PublicPlayer> & { edge?: "left" | "right" | null; unplaced?: boolean };
 
 /**
  * Where the ring's avatars go: the seam between the Play screen and a mode. Tap mode is
