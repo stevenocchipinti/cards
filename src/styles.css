@@ -369,6 +369,241 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.6); overflow: hidden; overscr
 .message-screen { justify-content: center; text-align: center; }
 .message-screen .title { font-size: 2.4rem; color: var(--gold); }
 
+/* ---- Play screen (see the mockup: 390px design width, works 360 to 430) ---- */
+
+:root {
+  --glow: 0 0 0 3px var(--gold), 0 0 22px 6px rgb(255 215 94 / 0.75);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.play {
+  position: relative;
+  max-width: 430px;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.play-top {
+  position: absolute;
+  top: var(--safe-top);
+  left: 0;
+  right: 0;
+  height: 48px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 5;
+}
+.play-top__code { display: flex; flex-direction: column; line-height: 1; }
+.play-top__label { font-size: 10px; letter-spacing: 1.5px; color: var(--ink-muted); font-weight: 800; text-transform: uppercase; }
+.play-top__value { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; }
+.play-top__mode { flex: 1; display: flex; justify-content: center; }
+.play-top__actions { display: flex; gap: 6px; }
+.top-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  background: rgb(0 0 0 / 0.25);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+.top-btn--host {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* The ring: a 900px circle whose top arc crosses the screen. Coordinates come from ringLayout. */
+.ring-arc {
+  position: absolute;
+  margin-top: var(--safe-top);
+  border-radius: 50%;
+  border: 2px solid rgb(255 255 255 / 0.13);
+  pointer-events: none;
+}
+.ring { list-style: none; margin: 0; padding: 0; position: absolute; inset: var(--safe-top) 0 auto 0; height: 0; z-index: 3; isolation: isolate; }
+.ring-seat {
+  position: absolute;
+  width: 84px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink);
+  cursor: pointer;
+  transform-origin: 50% 26px;
+  transition: left 0.15s linear, top 0.15s linear, transform 0.15s ease-out;
+}
+.ring-seat .avatar { border: 3px solid rgb(255 255 255 / 0.85); box-shadow: 0 2px 6px rgb(0 0 0 / 0.45); transition: box-shadow 0.15s; }
+.ring-seat .avatar--highlighted { border-color: rgb(255 255 255 / 0.85); box-shadow: var(--glow); }
+.ring-seat--away { opacity: 0.55; }
+.ring-seat__name,
+.ring-seat__chips { line-height: 1; text-shadow: 0 1px 2px rgb(0 0 0 / 0.6); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.ring-seat__name { font-size: 13px; font-weight: 800; }
+.ring-seat__chips { font-family: var(--font-display); font-size: 13px; color: var(--gold); }
+.ring-seat:focus-visible { outline: none; }
+.ring-seat:focus-visible .avatar { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+/* The felt between the ring and the rail: Pots, then the latest Activity. */
+.play__felt {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* --ring-bottom is set by PlayScreen from the ring layout. */
+  padding: calc(var(--ring-bottom, 170px) + 14px + var(--safe-top)) 20px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.pots { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 16px; --pot: 104px; }
+.pots--many { --pot: 84px; }
+.pot { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 350px; min-width: 110px; flex: 0 1 auto; }
+.pots:has(> .pot + .pot) .pot { max-width: 150px; }
+.pot__chip {
+  width: var(--pot);
+  height: var(--pot);
+  padding: 0;
+  border-radius: 50%;
+  border: 6px dashed rgb(255 215 94 / 0.85);
+  background: rgb(0 0 0 / 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.pot__chip--selected { box-shadow: 0 0 0 3px var(--gold), 0 0 26px 8px rgb(255 215 94 / 0.7); }
+.pot__name { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--ink-muted); text-transform: uppercase; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pot__total { font-family: var(--font-display); font-size: calc(var(--pot) * 0.27); line-height: 1; color: var(--gold); }
+.pot__contributions { font-size: 12px; font-weight: 700; color: #d6e8da; text-align: center; }
+
+.ticker { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: #b9d4bf; text-align: center; }
+.ticker li + li { opacity: 0.6; }
+
+/* My rail: a wooden edge over dark felt, pinned to the bottom. */
+.rail {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  border-top: 10px solid var(--rail);
+  background: var(--panel);
+  padding: 12px 16px calc(14px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rail__mine { display: flex; justify-content: space-between; align-items: baseline; }
+.rail__label { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: var(--ink-muted); }
+.rail__mine-value { font-family: var(--font-display); font-size: 22px; color: var(--gold); }
+.rail__amount { display: flex; justify-content: center; align-items: baseline; gap: 8px; height: 44px; min-width: 0; }
+.rail__amount-value { font-family: var(--font-display); font-size: 42px; line-height: 1; }
+.rail__amount-to { font-size: 13px; font-weight: 800; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail__chips { display: flex; justify-content: center; gap: 14px; }
+.rail__row { display: flex; justify-content: center; gap: 10px; }
+.rail__error { margin: 0; font-size: 13px; font-weight: 800; color: #ffd9d4; text-align: center; }
+
+.chip-btn {
+  --chip: #ece6d6;
+  --chip-text: var(--ink-dark);
+  width: 60px;
+  height: 60px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--chip);
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 60ms ease, box-shadow 60ms ease;
+}
+.chip-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgb(0 0 0 / 0.45); }
+.chip-btn:disabled { cursor: default; filter: saturate(0.4) brightness(0.7); }
+.chip-btn__face {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 5px dashed rgb(255 255 255 / 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--chip-text);
+}
+.chip-btn--5 { --chip: #c8372d; --chip-text: #fff; }
+.chip-btn--25 { --chip: #1d7d45; --chip-text: #fff; }
+.chip-btn--100 { --chip: #222; --chip-text: #fff; }
+.chip-btn--100 .chip-btn__face { font-size: 15px; letter-spacing: -0.3px; }
+
+.pill-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pill-btn:disabled { opacity: 0.45; cursor: default; }
+
+.send-bar {
+  min-height: 58px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--gold);
+  color: var(--ink-dark);
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.35);
+  touch-action: none;
+  cursor: grab;
+  overflow: hidden;
+}
+.send-bar:disabled { background: rgb(255 255 255 / 0.12); color: #a9c4b0; cursor: default; }
+.send-bar--armed { box-shadow: 0 4px 0 rgb(0 0 0 / 0.35), 0 0 18px 4px rgb(255 215 94 / 0.6); }
+.send-bar__content { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
+.send-bar__label { font-family: var(--font-display); font-size: 17px; letter-spacing: 0.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 12px; }
+
+/* Short phones: tuck the felt in so the Pots still fit between the ring and the rail. */
+@media (max-height: 720px) {
+  .play__felt { gap: 8px; }
+  .pots { --pot: 88px; }
+  .pots--many { --pot: 72px; }
+  .rail { gap: 8px; padding-top: 10px; }
+  .rail__amount { height: 38px; }
+  .rail__amount-value { font-size: 36px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-seat, .chip-btn, .send-bar__content { transition: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: none; }
 }
