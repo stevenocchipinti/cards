@@ -33,6 +33,12 @@ type Props = {
   modeSwitch?: ReactNode;
   /** The send bar's hint with no Target; compass mode can say "Aim or tap a Target". */
   noTargetHint?: string;
+  /** Compass mode (#9): a long-press on a Player or Pot, to lock its Bearing. */
+  onHold?: (t: TargetRef) => void;
+  /** Compass mode (#9): drawn over the screen (the aim marker, a toast). */
+  overlay?: ReactNode;
+  /** Compass mode (#9): a line on the felt under the Activity (a hint or why it fell back). */
+  feltNote?: ReactNode;
   /** The dealer tray (#7). Until then, a placeholder. */
   renderHostTray?: (ctx: HostTrayContext) => ReactNode;
 };
@@ -42,7 +48,17 @@ type Props = {
  * and latest Activity on the felt, and my rail at the bottom. Pick an amount, pick a Target,
  * swipe up.
  */
-export function PlayScreen({ view, online, layout = tapRingLayout, modeSwitch, noTargetHint, renderHostTray }: Props) {
+export function PlayScreen({
+  view,
+  online,
+  layout = tapRingLayout,
+  modeSwitch,
+  noTargetHint,
+  onHold,
+  overlay,
+  feltNote,
+  renderHostTray,
+}: Props) {
   const ref = useRef<HTMLElement>(null);
   const width = useWidth(ref);
   const [leaving, setLeaving] = useState(false);
@@ -99,14 +115,17 @@ export function PlayScreen({ view, online, layout = tapRingLayout, modeSwitch, n
         isAway={(p) => isAway(online, view, p._id)}
         isTarget={(p) => target?.kind === "player" && target.playerId === p._id}
         onPick={(p) => pick({ kind: "player", playerId: p._id })}
+        onHold={onHold && ((p) => onHold({ kind: "player", playerId: p._id }))}
       />
       <div className="play__felt">
         <Pots
           view={view}
           isTarget={(pot) => target?.kind === "pot" && target.potId === pot._id}
           onPick={(pot) => pick({ kind: "pot", potId: pot._id })}
+          onHold={onHold && ((pot) => onHold({ kind: "pot", potId: pot._id }))}
         />
         <ActivityTicker view={view} />
+        {feltNote}
       </div>
       <Rail
         myChips={myChips}
@@ -120,6 +139,7 @@ export function PlayScreen({ view, online, layout = tapRingLayout, modeSwitch, n
         onSend={() => void doSend()}
         error={error}
       />
+      {overlay}
       <LeaveDialog view={view} open={leaving} onClose={() => setLeaving(false)} />
       {hostOpen &&
         (renderHostTray ?? ((ctx) => <HostTrayPlaceholder onClose={ctx.close} />))({
