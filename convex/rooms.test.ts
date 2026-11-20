@@ -75,6 +75,27 @@ describe("createRoom", () => {
     await expect(t.mutation(api.rooms.createRoom, { deviceId: HOST, name: "x".repeat(25) })).rejects.toThrow();
     await expect(t.mutation(api.rooms.createRoom, { deviceId: "short", name: "Hana" })).rejects.toThrow();
   });
+
+  test("a retry with the same requestId returns the same Room instead of making another", async () => {
+    const t = convexTest(schema, modules);
+    const requestId = "req-0000-1111";
+    const first = await t.mutation(api.rooms.createRoom, { deviceId: HOST, name: "Hana", requestId });
+    const again = await t.mutation(api.rooms.createRoom, { deviceId: HOST, name: "Hana", requestId });
+    expect(again).toEqual(first);
+    const rooms = await t.query(api.rooms.myRooms, { deviceId: HOST });
+    expect(rooms).toHaveLength(1);
+    const other = await t.mutation(api.rooms.createRoom, { deviceId: HOST, name: "Hana", requestId: "req-2222-3333" });
+    expect(other.roomId).not.toBe(first.roomId);
+  });
+
+  test("another device's requestId never hands over someone else's Room", async () => {
+    const t = convexTest(schema, modules);
+    const requestId = "req-0000-1111";
+    const mine = await t.mutation(api.rooms.createRoom, { deviceId: HOST, name: "Hana", requestId });
+    const theirs = await t.mutation(api.rooms.createRoom, { deviceId: ALICE, name: "Alice", requestId });
+    expect(theirs.roomId).not.toBe(mine.roomId);
+    expect(theirs.playerId).not.toBe(mine.playerId);
+  });
 });
 
 describe("joinRoom", () => {

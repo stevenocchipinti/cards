@@ -43,7 +43,11 @@ export default defineSchema({
     /** Clockwise, active Players only. Rooms are small, so a bounded array is fine. */
     seatingOrder: v.array(v.id("players")),
     endedAt: v.optional(v.number()),
-  }).index("by_code_and_stage", ["code", "stage"]),
+    /** The client's id for the New Room request, so a double tap or retry returns this Room. */
+    createRequestId: v.optional(v.string()),
+  })
+    .index("by_code_and_stage", ["code", "stage"])
+    .index("by_createRequestId", ["createRequestId"]),
 
   players: defineTable({
     roomId: v.id("rooms"),

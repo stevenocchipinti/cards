@@ -142,13 +142,32 @@ async function takeOut(
   });
 }
 
-/** Creates a Room in the Lobby with the caller as Host, and its first Pot. */
+/**
+ * Creates a Room in the Lobby with the caller as Host, and its first Pot. Pass the same
+ * `requestId` when retrying a New Room tap: if this device already made a Room with it,
+ * that Room is returned instead of a second one.
+ */
 export const createRoom = mutation({
-  args: { deviceId: v.string(), name: v.string() },
+  args: { deviceId: v.string(), name: v.string(), requestId: v.optional(v.string()) },
   returns: v.object({ roomId: v.id("rooms"), playerId: v.id("players"), code: v.string() }),
   handler: async (ctx, args) => {
     checkDeviceId(args.deviceId);
     const name = cleanName(args.name);
+    const requestId = args.requestId;
+    if (requestId !== undefined) {
+      if (requestId.length < 8 || requestId.length > 128) fail("Invalid request");
+      const earlier = await ctx.db
+        .query("rooms")
+        .withIndex("by_createRequestId", (q) => q.eq("createRequestId", requestId))
+        .take(5);
+      for (const room of earlier) {
+        const host = room.hostPlayerId ? await ctx.db.get("players", room.hostPlayerId) : null;
+        // Only the device that made it gets it back; another device's id just makes a new Room.
+        if (host && host.deviceId === args.deviceId) {
+          return { roomId: room._id, playerId: host._id, code: room.code };
+        }
+      }
+    }
     let code: string | null = null;
     for (let attempt = 0; attempt < 50 && code === null; attempt++) {
       const candidate = randomCode();
@@ -160,6 +179,7 @@ export const createRoom = mutation({
       stage: "lobby",
       startingChips: DEFAULT_STARTING_CHIPS,
       seatingOrder: [],
+      ...(requestId !== undefined ? { createRequestId: requestId } : {}),
     });
     const room = (await ctx.db.get("rooms", roomId))!;
     const playerId = await addPlayer(ctx, room, args.deviceId, name);
